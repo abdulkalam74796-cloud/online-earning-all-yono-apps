@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="hi"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Admin Login – All Yono Apps</title><link rel="stylesheet" href="style.css"></head>
+<body><header class="hero"><p class="eyebrow">SITE MANAGEMENT</p><h1>Admin Panel</h1><p class="subtitle">Online Earning – All Yono Apps</p></header>
+<main class="form-wrap">
+<section class="panel" id="loginPanel"><h1>🔐 Admin Login</h1><p><strong>महत्वपूर्ण:</strong> यह शुरुआती डेमो है। इसका पासवर्ड केवल इसी ब्राउज़र में जाँचता है और यह सुरक्षित ऑनलाइन लॉगिन नहीं है। सार्वजनिक वेबसाइट पर वास्तविक ऐप/रेफरल डेटा डालने से पहले Firebase Authentication या किसी सुरक्षित सर्वर से जोड़ना ज़रूरी है।</p>
+<label for="password">डेमो पासवर्ड बनाएँ</label><input id="password" type="password" autocomplete="current-password" placeholder="कम से कम 8 अक्षर">
+<button class="action" id="login">Login</button><p id="loginError" role="status"></p></section>
+<section class="panel hidden" id="adminPanel"><h1>गेम मैनेज करें</h1><p>यह डेमो आपके इसी ब्राउज़र में डेटा सेव करता है। दूसरे फोन/ब्राउज़र पर अपने-आप सिंक नहीं होगा।</p>
+<form id="gameForm">
+<input type="hidden" id="gameId">
+<label for="name">गेम / ऐप का नाम *</label><input id="name" required maxlength="80">
+<label for="category">कैटेगरी</label><select id="category"><option>Gaming</option><option>Referral</option><option>Other</option></select>
+<label for="icon">इमोजी या आइकन का URL</label><input id="icon" placeholder="🎮 या https://...">
+<label for="url">Referral / Download Link *</label><input id="url" type="url" required placeholder="https://...">
+<label for="bonus">Signup Bonus (वैकल्पिक)</label><input id="bonus" maxlength="80">
+<label for="withdrawal">Minimum Withdrawal (वैकल्पिक)</label><input id="withdrawal" maxlength="80">
+<label for="description">विवरण</label><textarea id="description" maxlength="240"></textarea>
+<button class="action" type="submit">Save Game</button><button class="action secondary" type="button" id="clear">Clear</button>
+</form>
+<div class="admin-list"><h2>मौजूदा गेम</h2><div id="adminGames"></div></div>
+<hr style="border:0;border-top:1px solid #e8ebf2;margin:22px 0">
+<label for="telegramUrl">Telegram लिंक (वैकल्पिक)</label><input id="telegramUrl" type="url" placeholder="https://t.me/yourchannel"><button class="action" id="saveSettings">Save Telegram Link</button>
+<button class="action secondary" id="logout">Logout</button><p><a href="index.html">← वेबसाइट देखें</a></p></section>
+</main>
+<script src="admin.js"></script></body></html>
