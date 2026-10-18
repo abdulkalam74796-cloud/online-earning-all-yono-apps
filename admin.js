@@ -1,8 +1,3 @@
-const STORE_KEY = "oy_apps_demo_v1";
-const SETTINGS_KEY = "oy_settings_demo_v1";
-const PASS_KEY = "oy_demo_pass_v1";
-const SESSION_KEY = "oy_demo_session_v1";
-
 const SUPABASE_URL = "https://usqiiwtvmgymdgngdvfh.supabase.co";
 const SUPABASE_KEY = "sb_publishable_M0FMsPITFc-IXqo1gWbSbw_N0gk_p-i";
 const BUCKET = "game-images";
@@ -23,7 +18,11 @@ function safeLink(value) {
   }
 }
 
-async function games() {
+function showError(message) {
+  alert(message);
+}
+
+async function getGames() {
   const { data, error } = await db
     .from("games")
     .select("*")
@@ -35,7 +34,7 @@ async function games() {
 
 async function loadGames() {
   try {
-    renderAdmin(await games());
+    renderAdmin(await getGames());
   } catch (error) {
     console.error(error);
     $("adminGames").textContent =
@@ -43,43 +42,49 @@ async function loadGames() {
   }
 }
 
-function enter() {
-  $("loginPanel").classList.add("hidden");
-  $("adminPanel").classList.remove("hidden");
+async function checkSession() {
+  const { data } = await db.auth.getSession();
 
-  const settings = JSON.parse(
-    localStorage.getItem(SETTINGS_KEY) || "{}"
-  );
-
-  $("telegramUrl").value = settings.telegram || "";
-  loadGames();
+  if (data.session) {
+    $("loginPanel").classList.add("hidden");
+    $("adminPanel").classList.remove("hidden");
+    await loadGames();
+  } else {
+    $("loginPanel").classList.remove("hidden");
+    $("adminPanel").classList.add("hidden");
+  }
 }
 
-$("login").onclick = () => {
+$("login").onclick = async () => {
+  const email = $("email")?.value.trim();
   const password = $("password").value;
 
-  if (password.length < 8) {
+  if (!email) {
     $("loginError").textContent =
-      "पासवर्ड कम से कम 8 अक्षर का रखें।";
+      "कृपया अपना एडमिन ईमेल भरें।";
     return;
   }
 
-  const saved = localStorage.getItem(PASS_KEY);
+  const { error } = await db.auth.signInWithPassword({
+    email,
+    password
+  });
 
-  if (!saved) {
-    localStorage.setItem(PASS_KEY, password);
-    localStorage.setItem(SESSION_KEY, "yes");
-    enter();
-  } else if (saved === password) {
-    localStorage.setItem(SESSION_KEY, "yes");
-    enter();
-  } else {
-    $("loginError").textContent = "पासवर्ड सही नहीं है।";
+  if (error) {
+    $("loginError").textContent =
+      "लॉगिन नहीं हुआ: " + error.message;
+    return;
   }
+
+  await checkSession();
 };
 
-if (localStorage.getItem(SESSION_KEY) === "yes") {
-  enter();
+const logoutButton = $("logout");
+if (logoutButton) {
+  logoutButton.onclick = async () => {
+    await db.auth.signOut();
+    location.reload();
+  };
 }
 
 const galleryInput = $("galleryImage");
@@ -96,7 +101,7 @@ galleryInput.addEventListener("change", () => {
   }
 
   if (!file.type.startsWith("image/")) {
-    alert("कृपया फोटो चुनें।");
+    alert("कृपया फोटो फ़ाइल चुनें।");
     galleryInput.value = "";
     return;
   }
@@ -117,7 +122,14 @@ uploadButton.onclick = async () => {
   const file = galleryInput.files[0];
 
   if (!file) {
-    alert("पहले गैलरी से फोटो चुनें।");
+    alert("पहले मोबाइल गैलरी से फोटो चुनें।");
+    return;
+  }
+
+  const { data: sessionData } = await db.auth.getSession();
+
+  if (!sessionData.session) {
+    alert("पहले एडमिन ईमेल और पासवर्ड से लॉगिन करें।");
     return;
   }
 
@@ -129,14 +141,14 @@ uploadButton.onclick = async () => {
       file.name.split(".").pop().toLowerCase()
         .replace(/[^a-z0-9]/g, "") || "jpg";
 
-    const filePath =
+    const path =
       Date.now() + "-" +
-      Math.random().toString(36).slice(2, 10) +
+      Math.random().toString(36).slice(2, 9) +
       "." + extension;
 
     const { error } = await db.storage
       .from(BUCKET)
-      .upload(filePath, file, {
+      .upload(path, file, {
         upsert: false,
         contentType: file.type
       });
@@ -145,16 +157,15 @@ uploadButton.onclick = async () => {
 
     const { data } = db.storage
       .from(BUCKET)
-      .getPublicUrl(filePath);
+      .getPublicUrl(path);
 
     $("icon").value = data.publicUrl;
     uploadStatus.textContent =
       "फोटो अपलोड हो गई! अब Save Game दबाएँ।";
 
   } catch (error) {
-    console.error(error);
     uploadStatus.textContent =
-      "अपलोड में समस्या: " + error.message;
+      "फोटो अपलोड नहीं हुई: " + error.message;
   } finally {
     uploadButton.disabled = false;
   }
@@ -163,24 +174,25 @@ uploadButton.onclick = async () => {
 $("gameForm").onsubmit = async event => {
   event.preventDefault();
 
+  const { data: sessionData } = await db.auth.getSession();
+
+  if (!sessionData.session) {
+    alert("पहले एडमिन लॉगिन करें।");
+    return;
+  }
+
   const id = $("gameId").value || crypto.randomUUID();
-  const name = $("name").value.trim();
   const url = $("url").value.trim();
   const icon = $("icon").value.trim();
 
   if (!safeLink(url)) {
-    alert("सही गेम लिंक डालें।");
-    return;
-  }
-
-  if (icon.startsWith("http") && !safeLink(icon)) {
-    alert("फोटो URL सही नहीं है।");
+    alert("सही Referral / Download लिंक डालें।");
     return;
   }
 
   const game = {
     id,
-    name,
+    name: $("name").value.trim(),
     category: $("category").value,
     icon,
     url,
@@ -189,10 +201,10 @@ $("gameForm").onsubmit = async event => {
     description: $("description").value.trim()
   };
 
-  const saveButton =
+  const button =
     $("gameForm").querySelector('[type="submit"]');
 
-  saveButton.disabled = true;
+  button.disabled = true;
 
   try {
     const { error } = await db
@@ -212,12 +224,9 @@ $("gameForm").onsubmit = async event => {
 
   } catch (error) {
     console.error(error);
-    alert(
-      "गेम सेव नहीं हुआ: " + error.message +
-      "\nSupabase की INSERT/UPDATE policies जाँचें।"
-    );
+    alert("गेम सेव नहीं हुआ: " + error.message);
   } finally {
-    saveButton.disabled = false;
+    button.disabled = false;
   }
 };
 
@@ -229,7 +238,7 @@ $("clear").onclick = () => {
   uploadStatus.textContent = "";
 };
 
-async function renderAdmin(items) {
+function renderAdmin(items) {
   const root = $("adminGames");
   root.replaceChildren();
 
@@ -243,11 +252,8 @@ async function renderAdmin(items) {
         ? game.icon + " "
         : "") + game.name;
 
-    const controls = document.createElement("span");
-
     const edit = document.createElement("button");
     edit.textContent = "Edit";
-    edit.style.marginRight = "6px";
 
     edit.onclick = () => {
       [
@@ -267,23 +273,20 @@ async function renderAdmin(items) {
     del.onclick = async () => {
       if (!confirm("क्या इस गेम को हटाना है?")) return;
 
-      try {
-        const { error } = await db
-          .from("games")
-          .delete()
-          .eq("id", game.id);
+      const { error } = await db
+        .from("games")
+        .delete()
+        .eq("id", game.id);
 
-        if (error) throw error;
-
-        await loadGames();
-        alert("गेम हटा दिया गया।");
-      } catch (error) {
+      if (error) {
         alert("गेम नहीं हटा: " + error.message);
+        return;
       }
+
+      await loadGames();
     };
 
-    controls.append(edit, del);
-    row.append(title, controls);
+    row.append(title, edit, del);
     root.append(row);
   });
 }
@@ -297,14 +300,11 @@ $("saveSettings").onclick = () => {
   }
 
   localStorage.setItem(
-    SETTINGS_KEY,
+    "oy_settings_demo_v1",
     JSON.stringify({ telegram: value })
   );
 
-  alert("Telegram लिंक इसी ब्राउज़र में सेव हुआ।");
+  alert("Telegram लिंक सेव हो गया।");
 };
 
-$("logout").onclick = () => {
-  localStorage.removeItem(SESSION_KEY);
-  location.reload();
-};
+checkSession();
