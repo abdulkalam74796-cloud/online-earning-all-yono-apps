@@ -9,63 +9,77 @@ const BUCKET = "game-images";
 
 const $ = id => document.getElementById(id);
 
-function games() {
-try {
-return JSON.parse(localStorage.getItem(STORE_KEY)) || [];
-} catch {
-return [];
-}
-}
-
-function saveGames(items) {
-localStorage.setItem(STORE_KEY, JSON.stringify(items));
-}
+const db = window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY
+);
 
 function safeLink(value) {
-try {
-const u = new URL(value);
-return ["http:", "https:"].includes(u.protocol);
-} catch {
-return false;
+  try {
+    const u = new URL(value);
+    return ["http:", "https:"].includes(u.protocol);
+  } catch {
+    return false;
+  }
 }
+
+async function games() {
+  const { data, error } = await db
+    .from("games")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) throw error;
+  return data || [];
+}
+
+async function loadGames() {
+  try {
+    renderAdmin(await games());
+  } catch (error) {
+    console.error(error);
+    $("adminGames").textContent =
+      "गेम लोड नहीं हुए: " + error.message;
+  }
 }
 
 function enter() {
-$("loginPanel").classList.add("hidden");
-$("adminPanel").classList.remove("hidden");
-renderAdmin();
+  $("loginPanel").classList.add("hidden");
+  $("adminPanel").classList.remove("hidden");
 
-const settings = JSON.parse(
-localStorage.getItem(SETTINGS_KEY) || "{}"
-);
-$("telegramUrl").value = settings.telegram || "";
+  const settings = JSON.parse(
+    localStorage.getItem(SETTINGS_KEY) || "{}"
+  );
+
+  $("telegramUrl").value = settings.telegram || "";
+  loadGames();
 }
 
 $("login").onclick = () => {
-const password = $("password").value;
+  const password = $("password").value;
 
-if (password.length < 8) {
-$("loginError").textContent =
-"डेमो पासवर्ड कम से कम 8 अक्षर का रखें।";
-return;
-}
+  if (password.length < 8) {
+    $("loginError").textContent =
+      "पासवर्ड कम से कम 8 अक्षर का रखें।";
+    return;
+  }
 
-const saved = localStorage.getItem(PASS_KEY);
+  const saved = localStorage.getItem(PASS_KEY);
 
-if (!saved) {
-localStorage.setItem(PASS_KEY, password);
-localStorage.setItem(SESSION_KEY, "yes");
-enter();
-} else if (saved === password) {
-localStorage.setItem(SESSION_KEY, "yes");
-enter();
-} else {
-$("loginError").textContent = "पासवर्ड सही नहीं है।";
-}
+  if (!saved) {
+    localStorage.setItem(PASS_KEY, password);
+    localStorage.setItem(SESSION_KEY, "yes");
+    enter();
+  } else if (saved === password) {
+    localStorage.setItem(SESSION_KEY, "yes");
+    enter();
+  } else {
+    $("loginError").textContent = "पासवर्ड सही नहीं है।";
+  }
 };
 
 if (localStorage.getItem(SESSION_KEY) === "yes") {
-enter();
+  enter();
 }
 
 const galleryInput = $("galleryImage");
@@ -73,222 +87,224 @@ const preview = $("imagePreview");
 const uploadButton = $("uploadImage");
 const uploadStatus = $("uploadStatus");
 
-if (galleryInput) {
 galleryInput.addEventListener("change", () => {
-const file = galleryInput.files[0];
+  const file = galleryInput.files[0];
 
-if (!file) {
-  preview.hidden = true;
-  return;
-}
+  if (!file) {
+    preview.hidden = true;
+    return;
+  }
 
-if (!file.type.startsWith("image/")) {
-  alert("कृपया फोटो फ़ाइल चुनें।");
-  galleryInput.value = "";
-  return;
-}
+  if (!file.type.startsWith("image/")) {
+    alert("कृपया फोटो चुनें।");
+    galleryInput.value = "";
+    return;
+  }
 
-if (file.size > 5 * 1024 * 1024) {
-  alert("फोटो 5 MB से छोटी चुनें।");
-  galleryInput.value = "";
-  return;
-}
+  if (file.size > 5 * 1024 * 1024) {
+    alert("फोटो 5 MB से छोटी चुनें।");
+    galleryInput.value = "";
+    return;
+  }
 
-preview.src = URL.createObjectURL(file);
-preview.hidden = false;
-uploadStatus.textContent = "फोटो चुनी गई है। अब अपलोड करें।";
-
-});
-}
-
-if (uploadButton) {
-uploadButton.addEventListener("click", async () => {
-const file = galleryInput.files[0];
-
-if (!file) {
-  alert("पहले मोबाइल गैलरी से फोटो चुनें।");
-  return;
-}
-
-if (
-  !SUPABASE_KEY ||
-  SUPABASE_KEY === "PASTE_YOUR_PUBLISHABLE_KEY_HERE"
-) {
-  alert("पहले कोड में अपनी Supabase Publishable Key डालें।");
-  return;
-}
-
-if (!window.supabase) {
-  alert("Supabase लाइब्रेरी लोड नहीं हुई। इंटरनेट जाँचें।");
-  return;
-}
-
-uploadButton.disabled = true;
-uploadStatus.textContent = "फोटो अपलोड हो रही है, कृपया प्रतीक्षा करें…";
-
-try {
-  const client = window.supabase.createClient(
-    SUPABASE_URL,
-    SUPABASE_KEY
-  );
-
-  const extension = file.name.includes(".")
-    ? file.name.split(".").pop().toLowerCase().replace(/[^a-z0-9]/g, "")
-    : "jpg";
-
-  const filePath =
-    Date.now() + "-" + Math.random().toString(36).slice(2, 8) +
-    "." + (extension || "jpg");
-
-  const { error } = await client.storage
-    .from(BUCKET)
-    .upload(filePath, file, {
-      cacheControl: "3600",
-      upsert: false,
-      contentType: file.type
-    });
-
-  if (error) throw error;
-
-  const { data } = client.storage
-    .from(BUCKET)
-    .getPublicUrl(filePath);
-
-  $("icon").value = data.publicUrl;
+  preview.src = URL.createObjectURL(file);
+  preview.hidden = false;
   uploadStatus.textContent =
-    "अपलोड सफल! फोटो का URL आइकन बॉक्स में भर गया है। अब Save Game दबाएँ।";
-
-} catch (error) {
-  console.error(error);
-  uploadStatus.textContent =
-    "अपलोड नहीं हुआ: " + (error.message || "कृपया Supabase पॉलिसी जाँचें।");
-} finally {
-  uploadButton.disabled = false;
-}
-
+    "फोटो चुनी गई है। अब अपलोड करें।";
 });
-}
 
-function clearForm() {
-$("gameForm").reset();
-$("gameId").value = "";
+uploadButton.onclick = async () => {
+  const file = galleryInput.files[0];
 
-if (preview) {
-preview.hidden = true;
-preview.removeAttribute("src");
-}
+  if (!file) {
+    alert("पहले गैलरी से फोटो चुनें।");
+    return;
+  }
 
-if (uploadStatus) uploadStatus.textContent = "";
-}
+  uploadButton.disabled = true;
+  uploadStatus.textContent = "फोटो अपलोड हो रही है…";
 
-$("clear").onclick = clearForm;
+  try {
+    const extension =
+      file.name.split(".").pop().toLowerCase()
+        .replace(/[^a-z0-9]/g, "") || "jpg";
 
-$("gameForm").onsubmit = event => {
-event.preventDefault();
+    const filePath =
+      Date.now() + "-" +
+      Math.random().toString(36).slice(2, 10) +
+      "." + extension;
 
-const name = $("name").value.trim();
-const url = $("url").value.trim();
-const icon = $("icon").value.trim();
+    const { error } = await db.storage
+      .from(BUCKET)
+      .upload(filePath, file, {
+        upsert: false,
+        contentType: file.type
+      });
 
-if (!safeLink(url)) {
-alert("कृपया सही https:// या http:// लिंक डालें।");
-return;
-}
+    if (error) throw error;
 
-if (icon.startsWith("http") && !safeLink(icon)) {
-alert("आइकन URL सही नहीं है।");
-return;
-}
+    const { data } = db.storage
+      .from(BUCKET)
+      .getPublicUrl(filePath);
 
-const all = games();
-const id = $("gameId").value || ("g" + Date.now());
+    $("icon").value = data.publicUrl;
+    uploadStatus.textContent =
+      "फोटो अपलोड हो गई! अब Save Game दबाएँ।";
 
-const game = {
-id,
-name,
-category: $("category").value,
-icon,
-url,
-bonus: $("bonus").value.trim(),
-withdrawal: $("withdrawal").value.trim(),
-description: $("description").value.trim()
-};
-
-const index = all.findIndex(item => item.id === id);
-
-if (index >= 0) all[index] = game;
-else all.unshift(game);
-
-saveGames(all);
-clearForm();
-renderAdmin();
-
-alert("गेम इस ब्राउज़र में सेव हो गया।");
-};
-
-function renderAdmin() {
-const root = $("adminGames");
-root.innerHTML = "";
-
-games().forEach(game => {
-const row = document.createElement("div");
-row.className = "admin-item";
-
-const title = document.createElement("span");
-title.textContent = (game.icon || "🎮") + " " + game.name;
-
-const controls = document.createElement("span");
-
-const edit = document.createElement("button");
-edit.textContent = "Edit";
-edit.style.marginRight = "6px";
-
-edit.onclick = () => {
-  [
-    "name", "category", "icon", "url",
-    "bonus", "withdrawal", "description"
-  ].forEach(key => {
-    $(key).value = game[key] || "";
-  });
-
-  $("gameId").value = game.id;
-  window.scrollTo({ top: 0, behavior: "smooth" });
-};
-
-const del = document.createElement("button");
-del.textContent = "Delete";
-
-del.onclick = () => {
-  if (confirm("इस गेम को हटाएँ?")) {
-    saveGames(games().filter(item => item.id !== game.id));
-    renderAdmin();
+  } catch (error) {
+    console.error(error);
+    uploadStatus.textContent =
+      "अपलोड में समस्या: " + error.message;
+  } finally {
+    uploadButton.disabled = false;
   }
 };
 
-controls.append(edit, del);
-row.append(title, controls);
-root.append(row);
+$("gameForm").onsubmit = async event => {
+  event.preventDefault();
 
-});
+  const id = $("gameId").value || crypto.randomUUID();
+  const name = $("name").value.trim();
+  const url = $("url").value.trim();
+  const icon = $("icon").value.trim();
+
+  if (!safeLink(url)) {
+    alert("सही गेम लिंक डालें।");
+    return;
+  }
+
+  if (icon.startsWith("http") && !safeLink(icon)) {
+    alert("फोटो URL सही नहीं है।");
+    return;
+  }
+
+  const game = {
+    id,
+    name,
+    category: $("category").value,
+    icon,
+    url,
+    bonus: $("bonus").value.trim(),
+    withdrawal: $("withdrawal").value.trim(),
+    description: $("description").value.trim()
+  };
+
+  const saveButton =
+    $("gameForm").querySelector('[type="submit"]');
+
+  saveButton.disabled = true;
+
+  try {
+    const { error } = await db
+      .from("games")
+      .upsert(game, { onConflict: "id" });
+
+    if (error) throw error;
+
+    $("gameForm").reset();
+    $("gameId").value = "";
+    preview.hidden = true;
+    preview.removeAttribute("src");
+    uploadStatus.textContent = "";
+
+    await loadGames();
+    alert("गेम डेटाबेस में सेव हो गया!");
+
+  } catch (error) {
+    console.error(error);
+    alert(
+      "गेम सेव नहीं हुआ: " + error.message +
+      "\nSupabase की INSERT/UPDATE policies जाँचें।"
+    );
+  } finally {
+    saveButton.disabled = false;
+  }
+};
+
+$("clear").onclick = () => {
+  $("gameForm").reset();
+  $("gameId").value = "";
+  preview.hidden = true;
+  preview.removeAttribute("src");
+  uploadStatus.textContent = "";
+};
+
+async function renderAdmin(items) {
+  const root = $("adminGames");
+  root.replaceChildren();
+
+  items.forEach(game => {
+    const row = document.createElement("div");
+    row.className = "admin-item";
+
+    const title = document.createElement("span");
+    title.textContent =
+      (game.icon && !game.icon.startsWith("http")
+        ? game.icon + " "
+        : "") + game.name;
+
+    const controls = document.createElement("span");
+
+    const edit = document.createElement("button");
+    edit.textContent = "Edit";
+    edit.style.marginRight = "6px";
+
+    edit.onclick = () => {
+      [
+        "name", "category", "icon", "url",
+        "bonus", "withdrawal", "description"
+      ].forEach(key => {
+        $(key).value = game[key] || "";
+      });
+
+      $("gameId").value = game.id;
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    };
+
+    const del = document.createElement("button");
+    del.textContent = "Delete";
+
+    del.onclick = async () => {
+      if (!confirm("क्या इस गेम को हटाना है?")) return;
+
+      try {
+        const { error } = await db
+          .from("games")
+          .delete()
+          .eq("id", game.id);
+
+        if (error) throw error;
+
+        await loadGames();
+        alert("गेम हटा दिया गया।");
+      } catch (error) {
+        alert("गेम नहीं हटा: " + error.message);
+      }
+    };
+
+    controls.append(edit, del);
+    row.append(title, controls);
+    root.append(row);
+  });
 }
 
 $("saveSettings").onclick = () => {
-const value = $("telegramUrl").value.trim();
+  const value = $("telegramUrl").value.trim();
 
-if (value && !safeLink(value)) {
-alert("सही Telegram URL डालें।");
-return;
-}
+  if (value && !safeLink(value)) {
+    alert("सही Telegram लिंक डालें।");
+    return;
+  }
 
-localStorage.setItem(
-SETTINGS_KEY,
-JSON.stringify({ telegram: value })
-);
+  localStorage.setItem(
+    SETTINGS_KEY,
+    JSON.stringify({ telegram: value })
+  );
 
-alert("Telegram लिंक सेव हो गया।");
+  alert("Telegram लिंक इसी ब्राउज़र में सेव हुआ।");
 };
 
 $("logout").onclick = () => {
-localStorage.removeItem(SESSION_KEY);
-location.reload();
+  localStorage.removeItem(SESSION_KEY);
+  location.reload();
 };
