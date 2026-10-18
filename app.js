@@ -1,27 +1,126 @@
-const STORE_KEY = "oy_apps_demo_v1";
-const SETTINGS_KEY = "oy_settings_demo_v1";
-const seedGames = [
-  {id:"sample1",name:"आपका पहला गेम",category:"Gaming",bonus:"बोनस की जानकारी यहाँ",withdrawal:"नियम जाँचें",url:"https://example.com",icon:"🎮",description:"यह नमूना कार्ड है। Admin Panel से इसे बदलें या हटाएँ।"},
-  {id:"sample2",name:"अपना Referral App जोड़ें",category:"Referral",bonus:"शर्तें लागू",withdrawal:"कंपनी के नियम देखें",url:"https://example.com",icon:"🕹️",description:"यहाँ गेम का छोटा विवरण लिखें।"}
-];
-function loadGames(){try{const x=JSON.parse(localStorage.getItem(STORE_KEY));return Array.isArray(x)?x:seedGames}catch{return seedGames}}
-function safeUrl(url){try{const u=new URL(url);return ["http:","https:"].includes(u.protocol)?u.href:"#"}catch{return "#"}}
-function renderGames(filter=""){
- const list=loadGames().filter(g=>(g.name+" "+g.category+" "+g.description).toLowerCase().includes(filter.toLowerCase()));
- const root=document.getElementById("games"); if(!root)return;
- root.innerHTML=""; document.getElementById("count").textContent=list.length+" गेम";
- document.getElementById("empty").hidden=list.length!==0;
- list.forEach(g=>{const card=document.createElement("article");card.className="card";
- const icon=document.createElement("div");icon.className="icon";
- if(g.icon && /^https?:\/\//i.test(g.icon)){const img=document.createElement("img");img.src=safeUrl(g.icon);img.alt="";img.onerror=()=>{icon.textContent="🎮"};icon.appendChild(img)}else icon.textContent=g.icon||"🎮";
- const details=document.createElement("div");details.className="details";
- const badge=document.createElement("span");badge.className="badge";badge.textContent=g.category||"Gaming";
- const title=document.createElement("h3");title.textContent=g.name||"Unnamed Game";
- const desc=document.createElement("p");desc.textContent=(g.description||"")+(g.bonus?" • "+g.bonus:"")+(g.withdrawal?" • निकासी: "+g.withdrawal:"");
- const link=document.createElement("a");link.className="btn";link.href=safeUrl(g.url);link.target="_blank";link.rel="noopener noreferrer";link.textContent="Open / Download";
- details.append(badge,title,desc,link);card.append(icon,details);root.appendChild(card);
- });
- const settings=JSON.parse(localStorage.getItem(SETTINGS_KEY)||"{}");const tg=document.getElementById("telegram");
- if(settings.telegram){tg.href=safeUrl(settings.telegram);tg.hidden=false}
+const SUPABASE_URL = "https://usqiiwtvmgymdgngdvfh.supabase.co";
+const SUPABASE_KEY = "sb_publishable_M0FMsPITFc-IXqo1gWbSbw_N0gk_p-i";
+
+const db = window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY
+);
+
+function safeUrl(url) {
+  try {
+    const u = new URL(url);
+    return ["http:", "https:"].includes(u.protocol)
+      ? u.href
+      : "#";
+  } catch {
+    return "#";
+  }
 }
-if(document.getElementById("games")){document.getElementById("search").addEventListener("input",e=>renderGames(e.target.value));document.getElementById("year").textContent=new Date().getFullYear();renderGames()}
+
+async function renderGames(filter = "") {
+  const root = document.getElementById("games");
+  if (!root) return;
+
+  root.innerHTML = "<p>गेम लोड हो रहे हैं...</p>";
+
+  try {
+    const { data, error } = await db
+      .from("games")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+
+    const games = (data || []).filter(g =>
+      `${g.name} ${g.category} ${g.description}`
+        .toLowerCase()
+        .includes(filter.toLowerCase())
+    );
+
+    root.innerHTML = "";
+
+    const count = document.getElementById("count");
+    if (count) count.textContent = games.length + " गेम";
+
+    const empty = document.getElementById("empty");
+    if (empty) empty.hidden = games.length !== 0;
+
+    games.forEach(g => {
+      const card = document.createElement("article");
+      card.className = "card";
+
+      const icon = document.createElement("div");
+      icon.className = "icon";
+
+      if (g.icon && /^https?:\/\//i.test(g.icon)) {
+        const img = document.createElement("img");
+        img.src = safeUrl(g.icon);
+        img.alt = g.name || "गेम फोटो";
+        img.onerror = () => {
+          img.remove();
+          icon.textContent = "🎮";
+        };
+        icon.appendChild(img);
+      } else {
+        icon.textContent = g.icon || "🎮";
+      }
+
+      const details = document.createElement("div");
+      details.className = "details";
+
+      const badge = document.createElement("span");
+      badge.className = "badge";
+      badge.textContent = g.category || "Gaming";
+
+      const title = document.createElement("h3");
+      title.textContent = g.name || "गेम";
+
+      const desc = document.createElement("p");
+      desc.textContent =
+        (g.description || "") +
+        (g.bonus ? " • " + g.bonus : "") +
+        (g.withdrawal ? " • निकासी: " + g.withdrawal : "");
+
+      const link = document.createElement("a");
+      link.className = "btn";
+      link.href = safeUrl(g.url);
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      link.textContent = "Open / Download";
+
+      details.append(badge, title, desc, link);
+      card.append(icon, details);
+      root.appendChild(card);
+    });
+
+    const settings = JSON.parse(
+      localStorage.getItem("oy_settings_demo_v1") || "{}"
+    );
+
+    const telegram = document.getElementById("telegram");
+    if (telegram && settings.telegram) {
+      telegram.href = safeUrl(settings.telegram);
+      telegram.hidden = false;
+    }
+
+  } catch (error) {
+    console.error(error);
+    root.innerHTML =
+      "<p>गेम लोड नहीं हुए। Supabase की SELECT policy जाँचें।</p>";
+  }
+}
+
+const search = document.getElementById("search");
+
+if (search) {
+  search.addEventListener("input", e => {
+    renderGames(e.target.value);
+  });
+}
+
+const year = document.getElementById("year");
+if (year) year.textContent = new Date().getFullYear();
+
+if (document.getElementById("games")) {
+  renderGames();
+}
