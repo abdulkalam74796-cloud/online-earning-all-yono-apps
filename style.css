@@ -41,3 +41,32 @@ label{display:block;font-size:13px;font-weight:700;margin:14px 0 6px}input,texta
 .telegram-btn:hover {
   background: #168AC0;
 }
+/* Automatic game numbering */
+#games {
+  counter-reset: game-number;
+}
+
+#games .card {
+  counter-increment: game-number;
+  position: relative;
+}
+
+#games .card::before {
+  content: counter(game-number);
+  position: absolute;
+  top: -9px;
+  left: -7px;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #e53935;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 900;
+  border: 2px solid #fff;
+  box-shadow: 0 3px 8px #0002;
+  z-index: 2;
+}
