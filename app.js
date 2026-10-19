@@ -1,5 +1,6 @@
 const SUPABASE_URL = "https://usqiiwtvmgymdgngdvfh.supabase.co";
 const SUPABASE_KEY = "sb_publishable_M0FMsPITFc-IXqo1gWbSbw_N0gk_p-i";
+const TELEGRAM_URL = "https://t.me/abdulkalam6201";
 
 const db = window.supabase.createClient(
   SUPABASE_URL,
@@ -32,7 +33,7 @@ async function renderGames(filter = "") {
     if (error) throw error;
 
     const games = (data || []).filter(g =>
-      `${g.name} ${g.category} ${g.description}`
+      `${g.name || ""} ${g.category || ""} ${g.description || ""}`
         .toLowerCase()
         .includes(filter.toLowerCase())
     );
@@ -81,32 +82,40 @@ async function renderGames(filter = "") {
         (g.bonus ? " • " + g.bonus : "") +
         (g.withdrawal ? " • निकासी: " + g.withdrawal : "");
 
+      const actions = document.createElement("div");
+      actions.className = "card-actions";
+
       const link = document.createElement("a");
       link.className = "btn";
       link.href = safeUrl(g.url);
       link.target = "_blank";
       link.rel = "noopener noreferrer";
-      link.textContent = "Open / Download";
+      link.textContent = "⬇ Open / Download";
 
-      details.append(badge, title, desc, link);
+      const telegramLink = document.createElement("a");
+      telegramLink.className = "btn telegram-btn";
+      telegramLink.href = TELEGRAM_URL;
+      telegramLink.target = "_blank";
+      telegramLink.rel = "noopener noreferrer";
+      telegramLink.textContent = "✈ TG Join";
+      telegramLink.setAttribute("aria-label", "Telegram चैनल से जुड़ें");
+
+      actions.append(link, telegramLink);
+      details.append(badge, title, desc, actions);
       card.append(icon, details);
       root.appendChild(card);
     });
 
-    const settings = JSON.parse(
-      localStorage.getItem("oy_settings_demo_v1") || "{}"
-    );
-
     const telegram = document.getElementById("telegram");
-    if (telegram && settings.telegram) {
-      telegram.href = safeUrl(settings.telegram);
+    if (telegram) {
+      telegram.href = TELEGRAM_URL;
       telegram.hidden = false;
     }
 
   } catch (error) {
-    console.error(error);
+    console.error("Supabase games error:", error);
     root.innerHTML =
-      "<p>गेम लोड नहीं हुए। Supabase की SELECT policy जाँचें।</p>";
+      "<p>गेम लोड नहीं हुए। कृपया थोड़ी देर बाद दोबारा कोशिश करें।</p>";
   }
 }
 
