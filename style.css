@@ -18,3 +18,26 @@ footer{display:flex;justify-content:center;gap:18px;flex-wrap:wrap;padding:20px 
 .form-wrap{max-width:480px;margin:30px auto;padding:0 16px}.panel{background:white;border:1px solid var(--line);padding:22px;border-radius:18px;box-shadow:0 8px 25px #15213a0a}.panel h1{font-size:27px;color:var(--ink);margin-bottom:8px}.panel p{color:var(--muted);font-size:13px;line-height:1.5}
 label{display:block;font-size:13px;font-weight:700;margin:14px 0 6px}input,textarea,select{width:100%;padding:11px;border:1px solid #dce1eb;border-radius:9px;font:inherit;font-size:14px}textarea{min-height:75px;resize:vertical}.action{border:0;background:var(--red);color:white;border-radius:9px;padding:12px 15px;font-weight:800;cursor:pointer;margin-top:14px}.secondary{background:#eef1f7;color:var(--ink)}.hidden{display:none!important}.admin-list{margin-top:20px}.admin-item{display:flex;justify-content:space-between;gap:10px;align-items:center;border-bottom:1px solid var(--line);padding:12px 0;font-size:13px}.admin-item button{border:0;border-radius:7px;padding:7px 9px;cursor:pointer;background:#fee2e2;color:#991b1b}
 @media(max-width:420px){.hero{padding-top:28px}.grid{grid-template-columns:1fr}.card{padding:13px}}
+.card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.card-actions .btn {
+  display: inline-block;
+  text-align: center;
+  font-size: 12px;
+  padding: 10px 12px;
+}
+
+.telegram-btn {
+  background: #229ED9;
+  color: #fff;
+}
+
+.telegram-btn:hover {
+  background: #168AC0;
+}
