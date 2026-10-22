@@ -106,38 +106,38 @@ h2 {
   gap: 14px;
 }
 
-/* Game card */
+/* Game cards */
 .card {
   background: var(--card);
   border: 1px solid var(--line);
   border-radius: 18px;
-  padding: 16px;
+  padding: 14px;
   box-shadow: 0 5px 18px #15213a08;
-  display: flex;
-  gap: 13px;
-  align-items: flex-start;
+  display: grid;
+  grid-template-columns: 30px 58px minmax(0, 1fr);
+  column-gap: 10px;
+  align-items: start;
   position: relative;
   min-width: 0;
-  overflow: visible;
 }
 
-/* Game numbering */
+/* Automatic game numbering */
 #games {
   counter-reset: game-number;
 }
 
 #games > .card {
   counter-increment: game-number;
-  padding-left: 48px;
 }
 
 #games > .card::before {
   content: counter(game-number);
-  position: absolute;
-  top: 18px;
-  left: 8px;
+  position: static;
+  grid-column: 1;
+  grid-row: 1;
   width: 30px;
   height: 30px;
+  margin-top: 3px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -148,21 +148,22 @@ h2 {
   font-weight: 900;
   border: 2px solid #fff;
   box-shadow: 0 3px 8px #0002;
-  z-index: 5;
   pointer-events: none;
 }
 
+/* Game photo */
 .icon {
+  grid-column: 2;
+  grid-row: 1;
   width: 58px;
   height: 58px;
   border-radius: 15px;
-  flex: 0 0 58px;
   display: grid;
   place-items: center;
   background: #fff0f0;
   font-size: 28px;
   overflow: hidden;
-  margin-left: 0;
+  margin: 0;
 }
 
 .icon img {
@@ -173,9 +174,12 @@ h2 {
   border-radius: inherit;
 }
 
+/* Game details */
 .details {
+  grid-column: 3;
+  grid-row: 1;
   min-width: 0;
-  flex: 1;
+  width: 100%;
   overflow-wrap: anywhere;
 }
 
@@ -376,7 +380,7 @@ textarea {
   color: #991b1b;
 }
 
-/* Telegram and navigation menu */
+/* Navigation menu */
 .top-nav {
   display: flex;
   justify-content: center;
@@ -467,21 +471,20 @@ textarea {
   }
 
   #games > .card {
-    padding: 13px 10px 13px 43px;
-    gap: 9px;
+    grid-template-columns: 28px 54px minmax(0, 1fr);
+    column-gap: 8px;
+    padding: 12px;
   }
 
   #games > .card::before {
-    left: 6px;
-    top: 16px;
     width: 28px;
     height: 28px;
+    margin-top: 3px;
   }
 
-  .icon {
+  #games > .card .icon {
     width: 54px;
     height: 54px;
-    flex-basis: 54px;
   }
 
   .top-nav {
@@ -492,42 +495,5 @@ textarea {
   .top-nav a {
     padding: 9px 10px;
     font-size: 12px;
-  }
-}
-/* गेम नंबर को फोटो के बाईं तरफ अलग जगह दें */
-#games > .card {
-  padding-left: 12px !important;
-  gap: 12px !important;
-  overflow: visible !important;
-}
-
-#games > .card::before {
-  left: 8px !important;
-  top: 18px !important;
-  width: 30px !important;
-  height: 30px !important;
-  z-index: 5 !important;
-}
-
-/* फोटो को नंबर से दाईं ओर रखें */
-#games > .card .icon {
-  margin-left: 38px !important;
-  flex: 0 0 58px !important;
-}
-
-@media (max-width: 420px) {
-  #games > .card {
-    padding: 13px 10px !important;
-    gap: 8px !important;
-  }
-
-  #games > .card::before {
-    left: 5px !important;
-    top: 18px !important;
-  }
-
-  #games > .card .icon {
-    margin-left: 34px !important;
-    flex: 0 0 54px !important;
   }
 }
