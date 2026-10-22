@@ -474,3 +474,41 @@ textarea {
     font-size: 12px;
   }
 }
+/* गेम कार्ड के नंबर और फोटो की पोजीशन ठीक करें */
+.card {
+  position: relative;
+  overflow: hidden;
+}
+
+.card .icon {
+  position: relative;
+  flex-shrink: 0;
+  margin-left: 6px;
+}
+
+.card .icon img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: inherit;
+}
+
+/* गेम नंबर को फोटो के ऊपर व्यवस्थित करें */
+.card::before {
+  left: 10px;
+  top: 10px;
+  z-index: 2;
+}
+
+/* गेम का नाम और जानकारी सही जगह रखें */
+.card .details {
+  min-width: 0;
+  flex: 1;
+  overflow-wrap: anywhere;
+}
+
+.card .details h3 {
+  margin-top: 8px;
+  overflow-wrap: anywhere;
+}
