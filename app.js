@@ -28,21 +28,38 @@ function getCategory(game) {
     .trim()
     .toLowerCase();
 
-  if (category === "gaming" || category === "yono games" || category === "yono") {
+  if (
+    category === "gaming" ||
+    category === "yono" ||
+    category === "yono games"
+  ) {
     return "yono";
   }
 
-  if (category === "diwa games" || category === "diwa") {
+  if (
+    category === "diwa" ||
+    category === "diwa games"
+  ) {
     return "diwa";
   }
 
-  return "other";
+  if (
+    category === "referral" ||
+    category === "other" ||
+    category === "other games"
+  ) {
+    return "other";
+  }
+
+  // अनजान कैटेगरी को किसी दूसरी कैटेगरी में न दिखाएँ।
+  return "uncategorized";
 }
 
 function getCategoryName(category) {
   if (category === "yono") return "🎮 Yono Games";
   if (category === "diwa") return "🎲 Diwa Games";
   if (category === "other") return "🕹️ Other Games";
+  if (category === "uncategorized") return "अन्य";
   return "सभी गेम्स";
 }
 
@@ -62,13 +79,14 @@ async function loadGames() {
 
     allGames = data || [];
     renderGames();
-
   } catch (error) {
     console.error("Supabase games error:", error);
     root.innerHTML =
       "<p>गेम लोड नहीं हुए। कृपया थोड़ी देर बाद दोबारा कोशिश करें।</p>";
 
-    if ($("count")) $("count").textContent = "लोड नहीं हुआ";
+    if ($("count")) {
+      $("count").textContent = "लोड नहीं हुआ";
+    }
   }
 }
 
@@ -81,9 +99,11 @@ function renderGames() {
     : "";
 
   const games = allGames.filter(game => {
+    const category = getCategory(game);
+
     const matchesCategory =
       activeCategory === "all" ||
-      getCategory(game) === activeCategory;
+      category === activeCategory;
 
     const searchableText = [
       game.name,
@@ -91,11 +111,15 @@ function renderGames() {
       game.description,
       game.bonus,
       game.withdrawal
-    ].filter(Boolean).join(" ").toLowerCase();
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
 
-    const matchesSearch = searchableText.includes(searchText);
-
-    return matchesCategory && matchesSearch;
+    return (
+      matchesCategory &&
+      searchableText.includes(searchText)
+    );
   });
 
   root.replaceChildren();
@@ -105,14 +129,28 @@ function renderGames() {
   }
 
   if ($("categoryTitle")) {
-    $("categoryTitle").textContent = getCategoryName(activeCategory);
+    $("categoryTitle").textContent =
+      getCategoryName(activeCategory);
   }
 
   if ($("empty")) {
     $("empty").hidden = games.length !== 0;
+
+    if (games.length === 0) {
+      $("empty").textContent =
+        searchText
+          ? "कोई गेम नहीं मिला।"
+          : activeCategory === "diwa"
+            ? "अभी कोई Diwa गेम उपलब्ध नहीं है।"
+            : activeCategory === "other"
+              ? "अभी कोई Other गेम उपलब्ध नहीं है।"
+              : activeCategory === "yono"
+                ? "अभी कोई Yono गेम उपलब्ध नहीं है।"
+                : "अभी कोई गेम उपलब्ध नहीं है।";
+    }
   }
 
-  games.forEach(game => {
+  games.forEach((game, index) => {
     const card = document.createElement("article");
     card.className = "card";
 
@@ -148,7 +186,9 @@ function renderGames() {
     desc.textContent =
       (game.description || "") +
       (game.bonus ? " • " + game.bonus : "") +
-      (game.withdrawal ? " • निकासी: " + game.withdrawal : "");
+      (game.withdrawal
+        ? " • निकासी: " + game.withdrawal
+        : "");
 
     const actions = document.createElement("div");
     actions.className = "card-actions";
@@ -196,6 +236,7 @@ document.querySelectorAll("[data-category]").forEach(button => {
 
     document.querySelectorAll("[data-category]").forEach(item => {
       const selected = item === button;
+
       item.classList.toggle("active", selected);
       item.setAttribute("aria-pressed", String(selected));
     });
