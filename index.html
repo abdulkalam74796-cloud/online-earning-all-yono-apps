@@ -8,6 +8,7 @@
   <title>Online Earning – All Yono Apps</title>
   <meta name="google-site-verification" content="Z2QLwpztaInAVyL1glxqEkZ2NbUItpbiXxS_y06AgzM" />
   <link rel="stylesheet" href="style.css">
+
   <style>
     .top-nav {
       display: flex;
@@ -20,22 +21,29 @@
       border-bottom: 1px solid #e8ebf2;
     }
 
-    .top-nav a {
+    .top-nav a,
+    .top-nav button {
       display: inline-flex;
       align-items: center;
       justify-content: center;
       gap: 6px;
       padding: 10px 12px;
+      border: none;
       border-radius: 10px;
       text-decoration: none;
       color: #697386;
+      font-family: inherit;
       font-size: 13px;
       font-weight: 800;
       background: #f5f7fb;
+      cursor: pointer;
     }
 
     .top-nav a:hover,
-    .top-nav a:focus {
+    .top-nav a:focus,
+    .top-nav button:hover,
+    .top-nav button:focus,
+    .top-nav button.active {
       background: #e53935;
       color: white;
     }
@@ -48,6 +56,40 @@
     .top-nav .tg-top:hover,
     .top-nav .tg-top:focus {
       background: #168ac0;
+    }
+
+    .category-nav {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      padding: 12px 10px;
+      background: #fff;
+      border-bottom: 1px solid #e8ebf2;
+    }
+
+    .category-nav button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      padding: 10px 14px;
+      border: 1px solid #e8ebf2;
+      border-radius: 10px;
+      background: #f5f7fb;
+      color: #30394b;
+      font-family: inherit;
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .category-nav button:hover,
+    .category-nav button:focus,
+    .category-nav button.active {
+      background: #e53935;
+      border-color: #e53935;
+      color: white;
     }
 
     .about-section {
@@ -87,12 +129,15 @@
     }
 
     @media(max-width:420px) {
-      .top-nav {
+      .top-nav,
+      .category-nav {
         gap: 6px;
         padding: 10px 6px;
       }
 
-      .top-nav a {
+      .top-nav a,
+      .top-nav button,
+      .category-nav button {
         padding: 9px 10px;
         font-size: 12px;
       }
@@ -117,16 +162,23 @@
     <a class="tg-top" href="https://t.me/abdulkalam6201" target="_blank" rel="noopener noreferrer">✈️ TG Join</a>
   </nav>
 
+  <nav class="category-nav" aria-label="गेम कैटेगरी">
+    <button type="button" class="active" data-category="all" aria-pressed="true">🏠 All Games</button>
+    <button type="button" data-category="yono" aria-pressed="false">🎮 Yono Games</button>
+    <button type="button" data-category="diwa" aria-pressed="false">🎲 Diwa Games</button>
+    <button type="button" data-category="other" aria-pressed="false">🕹️ Other Games</button>
+  </nav>
+
   <main class="container">
     <section class="about-section" id="about">
       <h2>🎮 Online Earning – All Yono Apps</h2>
       <p>यहाँ गेम और ऐप के लिंक, उपलब्ध जानकारी, बोनस तथा निकासी संबंधी विवरण एक जगह देखें। किसी भी ऐप का इस्तेमाल करने से पहले उसकी शर्तें और विश्वसनीयता जाँचें।</p>
     </section>
 
-    <div class="section-heading">
+    <div class="section-heading" id="games-heading">
       <div>
         <p class="eyebrow">DISCOVER</p>
-        <h2>सभी गेम्स</h2>
+        <h2 id="categoryTitle">सभी गेम्स</h2>
       </div>
       <span id="count" class="count">गेम लोड हो रहे हैं...</span>
     </div>
@@ -153,6 +205,6 @@
   </footer>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="app.js?v=5"></script>
+  <script src="app.js?v=6"></script>
 </body>
 </html>
