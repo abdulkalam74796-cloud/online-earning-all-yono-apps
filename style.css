@@ -118,21 +118,23 @@ h2 {
   align-items: flex-start;
   position: relative;
   min-width: 0;
+  overflow: visible;
 }
 
-/* Automatic game numbering: 1, 2, 3, 4... */
+/* Game numbering */
 #games {
   counter-reset: game-number;
 }
 
 #games > .card {
   counter-increment: game-number;
+  padding-left: 48px;
 }
 
 #games > .card::before {
   content: counter(game-number);
   position: absolute;
-  top: 8px;
+  top: 18px;
   left: 8px;
   width: 30px;
   height: 30px;
@@ -160,17 +162,21 @@ h2 {
   background: #fff0f0;
   font-size: 28px;
   overflow: hidden;
+  margin-left: 0;
 }
 
 .icon img {
+  display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
+  border-radius: inherit;
 }
 
 .details {
   min-width: 0;
   flex: 1;
+  overflow-wrap: anywhere;
 }
 
 .details h3 {
@@ -460,8 +466,22 @@ textarea {
     grid-template-columns: 1fr;
   }
 
-  .card {
-    padding: 13px;
+  #games > .card {
+    padding: 13px 10px 13px 43px;
+    gap: 9px;
+  }
+
+  #games > .card::before {
+    left: 6px;
+    top: 16px;
+    width: 28px;
+    height: 28px;
+  }
+
+  .icon {
+    width: 54px;
+    height: 54px;
+    flex-basis: 54px;
   }
 
   .top-nav {
@@ -473,42 +493,4 @@ textarea {
     padding: 9px 10px;
     font-size: 12px;
   }
-}
-/* गेम कार्ड के नंबर और फोटो की पोजीशन ठीक करें */
-.card {
-  position: relative;
-  overflow: hidden;
-}
-
-.card .icon {
-  position: relative;
-  flex-shrink: 0;
-  margin-left: 6px;
-}
-
-.card .icon img {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  border-radius: inherit;
-}
-
-/* गेम नंबर को फोटो के ऊपर व्यवस्थित करें */
-.card::before {
-  left: 10px;
-  top: 10px;
-  z-index: 2;
-}
-
-/* गेम का नाम और जानकारी सही जगह रखें */
-.card .details {
-  min-width: 0;
-  flex: 1;
-  overflow-wrap: anywhere;
-}
-
-.card .details h3 {
-  margin-top: 8px;
-  overflow-wrap: anywhere;
 }
