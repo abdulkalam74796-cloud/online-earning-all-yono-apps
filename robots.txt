@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://abdulkalam74796-cloud.github.io/online-earning-all-yono-apps/sitemap.xml
